@@ -1,0 +1,19 @@
+npm i express nodemailer mongoose dotenv cookie-parser cors jsonwebtoken bcrypt
+
+Nodemailer Setup in Config Folder:
+Go to https://app.brevo.com/
+
+Get:
+1. login: 45effdw@smtp-brevo.com & put it SMTP_USER in .env
+2. Generate New Smtp Key & put it in SMTP_PASS in .env
+3. smtp server: smtp-relay.brevo.com & put it in Nodemailer config file in host
+
+In .env file:
+MONGO_URI='Your Uri'
+PORT= 3000
+JWT_SECRET='kfjhsur'
+COOKIE_NAME='mycookie'
+SMTP_USER=''
+SMTP_PASS=''
+SENDER_EMAIL=""
+NODE_ENV='development'
