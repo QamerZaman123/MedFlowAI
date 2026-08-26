@@ -19,6 +19,12 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: 6, // at least 6 characters
     },
+    role: {
+      type: String,
+      enum: ["admin", "doctor", "receptionist"],
+      default: "admin",
+      required: true,
+    },
     verifyOtp:{
       type:String,
       default:''
