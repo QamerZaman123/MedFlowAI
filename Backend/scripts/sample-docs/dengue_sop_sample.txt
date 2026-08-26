@@ -1,0 +1,36 @@
+MEDFLOWAI CLINICAL STANDARD OPERATING PROCEDURE (SOP)
+DOCUMENT TITLE: Dengue Clinical Management & Emergency Triage Protocol
+DOCUMENT CODE: SOP-CLINIC-DEN-2026-V1
+CATEGORY: SOP
+DATE OF REVISION: August 2026
+
+Section 1.0 Clinical Definition and Disease Progression
+Dengue fever is an acute mosquito-borne viral infection transmitted primarily by Aedes aegypti mosquitoes. The clinical course consists of three distinct phases:
+1. Febrile Phase: Characterized by high fever (usually > 38.5°C), severe headache, retro-orbital pain, generalized arthralgia, and facial flushing lasting 2 to 7 days.
+2. Critical Phase: Occurs around day 3 to 7 of illness, coinciding with defervescence. Characterized by systemic vascular leakage leading to hemoconcentration, thrombocytopenia, pleural effusion, and ascites.
+3. Recovery Phase: Plasma leakage ceases, fluid is reabsorbed, and platelet count steadily recovers over 48 to 72 hours.
+
+Section 2.0 Emergency Warning Signs and HDU Triage
+Patients exhibiting any of the following warning signs must be immediately triaged for admission to the High Dependency Unit (HDU) or Intensive Care:
+- Severe and persistent abdominal pain or tenderness.
+- Persistent vomiting (> 3 episodes in 24 hours).
+- Clinical fluid accumulation (ascites, pleural effusion).
+- Spontaneous mucosal bleeding (epistaxis, gingival bleeding, hematuria, or melena).
+- Lethargy, restlessness, or altered mental status.
+- Hepatomegaly (> 2 cm below the right costal margin).
+- Rapid drop in platelet count concurrent with hematocrit rise of > 20% from baseline.
+
+Section 3.0 Fluid Resuscitation and Medical Management
+Oral rehydration solution (ORS) and fruit juices are recommended in the febrile phase.
+In patients with warning signs admitted to HDU:
+- Initiate intravenous isotonic crystalloids (Normal Saline 0.9% or Ringer's Lactate) at 5 to 7 ml/kg/hr for 1-2 hours, then taper to 3 to 5 ml/kg/hr based on urine output and hematocrit stabilization.
+- Maintain target urine output >= 0.5 ml/kg/hour.
+- Avoid all Non-Steroidal Anti-Inflammatory Drugs (NSAIDs) such as Ibuprofen, Mefenamic Acid, and Aspirin due to the risk of severe gastrointestinal hemorrhage.
+- Administer Paracetamol 500mg - 1000mg every 6 hours PRN for fever (maximum 3g/day in adults).
+
+Section 4.0 Discharge Criteria
+Patients can be safely discharged when ALL of the following criteria are met:
+1. Afebrile for at least 48 hours without the use of antipyretics.
+2. Resolution of warning signs and stable hemodynamic parameters.
+3. Stable or increasing platelet count (> 50,000/μL) and normalized hematocrit without fluid boluses for 24 hours.
+4. Good appetite and normal bowel/bladder function.
