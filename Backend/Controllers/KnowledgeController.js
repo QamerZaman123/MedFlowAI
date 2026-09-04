@@ -18,8 +18,11 @@ cloudinary.config({
  */
 const uploadToCloudinary = (buffer, filename) => {
   return new Promise((resolve, reject) => {
-    if (!process.env.CLOUDINARY_CLOUD_NAME) {
-      console.warn("⚠️ CLOUDINARY_CLOUD_NAME not set; skipping Cloudinary upload.");
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+
+    if (!cloudName || !apiKey || cloudName === "your_cloud_name" || apiKey.includes("your_cloudinary_api_key")) {
+      console.log("ℹ️ Cloudinary credentials not configured or set to placeholder; bypassing remote asset upload.");
       return resolve({ secure_url: "", public_id: "" });
     }
 

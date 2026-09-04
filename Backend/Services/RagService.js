@@ -59,7 +59,8 @@ export const streamAnswer = async (question, res, userId) => {
 
   try {
     // Step 1: Retrieve relevant chunks with hallucination threshold
-    const chunks = await retrieveRelevantChunks(question, 5, 0.65);
+    // NOTE: threshold 0.45 balances recall vs hallucination — lower catches paraphrased queries
+    const chunks = await retrieveRelevantChunks(question, 5, 0.45);
 
     // Step 2: Handle zero-match scenario
     if (!chunks || chunks.length === 0) {
@@ -106,6 +107,11 @@ export const streamAnswer = async (question, res, userId) => {
     const groq = getGroqClient();
     const systemPrompt = buildSystemPrompt(chunks);
     const modelName = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+
+    // === SYSTEM PROMPT DEBUG LOG — visible in your backend terminal ===
+    console.log("\n====== [RAG] SYSTEM PROMPT SENT TO LLM ======");
+    console.log(systemPrompt);
+    console.log("====== [RAG] END SYSTEM PROMPT ======\n");
 
     const chatCompletion = await groq.chat.completions.create({
       model: modelName,

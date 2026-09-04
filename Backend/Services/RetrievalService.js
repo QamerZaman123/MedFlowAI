@@ -17,14 +17,26 @@ export const retrieveRelevantChunks = async (queryText, topK = 5, scoreThreshold
     // Step 1: Embed query using Gemini
     const queryVector = await embedText(queryText.trim());
 
-    // Step 2: Search Qdrant
+    // Step 2: Query Qdrant
     const qdrant = getQdrantClient();
-    const searchResults = await qdrant.search(QDRANT_COLLECTION, {
-      vector: queryVector,
-      limit: topK,
-      with_payload: true,
-      score_threshold: scoreThreshold,
-    });
+    let searchResults = [];
+
+    if (typeof qdrant.query === "function") {
+      const queryRes = await qdrant.query(QDRANT_COLLECTION, {
+        query: queryVector,
+        limit: topK,
+        with_payload: true,
+        score_threshold: scoreThreshold,
+      });
+      searchResults = queryRes?.points || [];
+    } else if (typeof qdrant.search === "function") {
+      searchResults = await qdrant.search(QDRANT_COLLECTION, {
+        vector: queryVector,
+        limit: topK,
+        with_payload: true,
+        score_threshold: scoreThreshold,
+      });
+    }
 
     if (!searchResults || searchResults.length === 0) {
       console.log(`🔍 [Retrieval] No chunks found matching query above threshold (${scoreThreshold})`);

@@ -13,7 +13,9 @@ import {
   resetPassword,
   getUserData,
   createUserByAdmin,
-  getAllUsers
+  getAllUsers,
+  updateUserByAdmin,
+  deleteUserByAdmin
 } from '../Controllers/AuthController.js'
 
 import {
@@ -84,6 +86,8 @@ router.get('/get-user-data', userAuth, getUserData)
 // ==================== ADMIN-ONLY ROUTES ====================
 router.post('/admin/create-user', userAuth, authorize('admin'), createUserByAdmin)
 router.get('/admin/users', userAuth, authorize('admin'), getAllUsers)
+router.put('/admin/users/:id', userAuth, authorize('admin'), updateUserByAdmin)
+router.delete('/admin/users/:id', userAuth, authorize('admin'), deleteUserByAdmin)
 
 // Admin Knowledge Base Management
 router.post('/admin/knowledge/documents', userAuth, authorize('admin'), upload.single('file'), uploadDocument)

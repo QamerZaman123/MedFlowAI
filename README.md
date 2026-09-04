@@ -194,3 +194,8 @@ node scripts/testOcrFallback.js
 ## 👥 Contributors & Credits
 - **Team MedFlowAI** — Bano Qabil Hackathon 2026
 - Built with ❤️ using Next.js, Express, Qdrant, Google Gemini, Groq, and Tailwind CSS.
+
+-**Team Mates** 
+-Qamar-Uz-Zaman
+-Moiz Ahmed
+-Muhammad Khalid

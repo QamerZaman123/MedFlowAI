@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-export const getConsultations = async (req, res) => {
-  try {
-    return res.json({
-      success: true,
-      message: "Doctor consultation list retrieved successfully",
-=======
 /**
  * ============================================================================
  * DoctorController.js — MedFlowAI Clinical Copilot & Consultation Engine
@@ -94,46 +87,95 @@ export const generateConsultationNote = async (req, res) => {
 export const finalizeConsultation = async (req, res) => {
   try {
     const { id } = req.params;
-    const { soapNote } = req.body;
+    const { soapNote, patientId, rawNotes } = req.body;
 
     let consultation = null;
 
     if (Consultation.db?.readyState === 1) {
-      consultation = await Consultation.findById(id);
-
-      if (!consultation) {
-        return res.status(404).json({ success: false, message: "Consultation not found" });
+      if (id && id.match(/^[0-9a-fA-F]{24}$/)) {
+        consultation = await Consultation.findById(id);
       }
 
-      consultation.status = "finalized";
-      if (soapNote) {
-        consultation.soapNote = {
-          subjective: soapNote.subjective ?? consultation.soapNote.subjective,
-          objective: soapNote.objective ?? consultation.soapNote.objective,
-          assessment: soapNote.assessment ?? consultation.soapNote.assessment,
-          plan: soapNote.plan ?? consultation.soapNote.plan,
-        };
+      // If not yet saved or temp ID, create the finalized consultation directly
+      if (!consultation) {
+        let patientDoc = null;
+        if (patientId) {
+          const pQuery = [{ patientId }];
+          if (typeof patientId === "string" && patientId.match(/^[0-9a-fA-F]{24}$/)) {
+            pQuery.push({ _id: patientId });
+          }
+          patientDoc = await Patient.findOne({ $or: pQuery });
+        }
+
+        consultation = new Consultation({
+          patient: patientDoc?._id || undefined,
+          patientId: patientDoc?.patientId || patientId || "PAT-WALKIN",
+          doctor: req.userId,
+          rawNotes: rawNotes || soapNote?.assessment || "Clinical Examination",
+          soapNote: soapNote || {},
+          status: "finalized",
+        });
+      } else {
+        consultation.status = "finalized";
+        if (soapNote) {
+          consultation.soapNote = {
+            subjective: soapNote.subjective ?? consultation.soapNote.subjective,
+            objective: soapNote.objective ?? consultation.soapNote.objective,
+            assessment: soapNote.assessment ?? consultation.soapNote.assessment,
+            plan: soapNote.plan ?? consultation.soapNote.plan,
+          };
+        }
+        if (!consultation.patient && patientId) {
+          const pQuery = [{ patientId }];
+          if (typeof patientId === "string" && patientId.match(/^[0-9a-fA-F]{24}$/)) {
+            pQuery.push({ _id: patientId });
+          }
+          const patientDoc = await Patient.findOne({ $or: pQuery });
+          if (patientDoc) {
+            consultation.patient = patientDoc._id;
+            consultation.patientId = patientDoc.patientId || patientId;
+          }
+        }
       }
 
       await consultation.save();
 
-      // Also append to patient timeline history if patient exists
-      if (consultation.patient && Patient.db?.readyState === 1) {
-        await Patient.findByIdAndUpdate(consultation.patient, {
-          $push: {
-            history: {
-              date: new Date(),
-              visitType: "Doctor Consultation (SOAP)",
-              notes: `${consultation.soapNote.assessment}. Plan: ${consultation.soapNote.plan.slice(0, 150)}...`,
-              vitals: consultation.soapNote.objective.slice(0, 100),
-            },
-          },
-          diagnosis: consultation.soapNote.assessment,
-        });
+      // Append to patient timeline history in Patient record
+      const resolvedPatientId = consultation.patient || consultation.patientId || patientId;
+      if (resolvedPatientId && Patient.db?.readyState === 1) {
+        const orClauses = [];
+        if (consultation.patient) orClauses.push({ _id: consultation.patient });
+        if (consultation.patientId) orClauses.push({ patientId: consultation.patientId });
+        if (patientId && patientId !== consultation.patientId) {
+          orClauses.push({ patientId });
+          if (typeof patientId === "string" && patientId.match(/^[0-9a-fA-F]{24}$/)) {
+            orClauses.push({ _id: patientId });
+          }
+        }
+        if (typeof resolvedPatientId === "string" && resolvedPatientId.match(/^[0-9a-fA-F]{24}$/)) {
+          orClauses.push({ _id: resolvedPatientId });
+        }
+
+        if (orClauses.length > 0) {
+          await Patient.findOneAndUpdate(
+            { $or: orClauses },
+            {
+              $push: {
+                history: {
+                  date: new Date(),
+                  visitType: "Doctor Consultation (SOAP)",
+                  notes: `${consultation.soapNote?.assessment || "Consultation Completed"}. Plan: ${(consultation.soapNote?.plan || "").slice(0, 160)}`,
+                  vitals: (consultation.soapNote?.objective || "").slice(0, 100),
+                },
+              },
+              diagnosis: consultation.soapNote?.assessment || consultation.rawNotes?.slice(0, 100),
+            }
+          );
+        }
       }
     } else {
       consultation = {
-        _id: id,
+        _id: id || "temp-" + Date.now(),
         status: "finalized",
         soapNote: soapNote || {},
       };
@@ -151,7 +193,7 @@ export const finalizeConsultation = async (req, res) => {
 };
 
 /**
- * Doctor: Retrieve all consultations for a given patient (Digital Twin feed)
+ * Doctor: Retrieve all consultations and history for a given patient (Digital Twin feed)
  */
 export const getPatientConsultations = async (req, res) => {
   try {
@@ -173,6 +215,19 @@ export const getPatientConsultations = async (req, res) => {
       return res.json({
         success: true,
         patientId,
+        patient: patient
+          ? {
+              _id: patient._id,
+              patientId: patient.patientId,
+              name: patient.name,
+              age: patient.age,
+              gender: patient.gender,
+              vitals: patient.vitals,
+              diagnosis: patient.diagnosis,
+              history: patient.history || [],
+              createdAt: patient.createdAt,
+            }
+          : null,
         consultations,
       });
     }
@@ -180,6 +235,7 @@ export const getPatientConsultations = async (req, res) => {
     return res.json({
       success: true,
       patientId,
+      patient: null,
       consultations: [],
     });
   } catch (error) {
@@ -208,7 +264,6 @@ export const getConsultations = async (req, res) => {
 
     return res.json({
       success: true,
->>>>>>> moiz
       consultations: [],
     });
   } catch (error) {
@@ -216,14 +271,6 @@ export const getConsultations = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
-export const getPatientHistory = async (req, res) => {
-  try {
-    const { patientId } = req.params;
-    return res.json({
-      success: true,
-      message: `Medical history for patient ${patientId} retrieved for doctor consultation`,
-=======
 /**
  * Doctor: Get full patient history timeline
  */
@@ -250,7 +297,6 @@ export const getPatientHistory = async (req, res) => {
 
     return res.json({
       success: true,
->>>>>>> moiz
       patientId,
       medicalHistory: [],
     });
@@ -259,12 +305,9 @@ export const getPatientHistory = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
-=======
 /**
  * Doctor: AI copilot analysis query
  */
->>>>>>> moiz
 export const useCopilot = async (req, res) => {
   try {
     const { query, patientContext } = req.body;
@@ -272,22 +315,14 @@ export const useCopilot = async (req, res) => {
       return res.status(400).json({ success: false, message: "Copilot query prompt is required" });
     }
 
-<<<<<<< HEAD
-=======
     const soap = await generateSoapNote(query);
 
->>>>>>> moiz
     return res.json({
       success: true,
       message: "AI Copilot analysis generated for doctor",
       copilotResponse: {
-<<<<<<< HEAD
-        summary: `Medical summary and clinical guidance for query: ${query}`,
-        suggestions: ["Verify patient lab work", "Recommend follow-up in 2 weeks"],
-=======
         summary: soap.assessment,
         suggestions: soap.plan.split("\n").filter((l) => l.trim().length > 0),
->>>>>>> moiz
         contextProvided: Boolean(patientContext),
       },
     });
@@ -295,8 +330,6 @@ export const useCopilot = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
-<<<<<<< HEAD
-=======
 /**
  * Doctor: AI-powered Patient Digital Twin natural language Q&A
  */
@@ -385,4 +418,3 @@ export default {
   generateReferral,
   generateCertificate,
 };
->>>>>>> moiz

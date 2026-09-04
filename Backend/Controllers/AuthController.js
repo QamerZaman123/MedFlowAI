@@ -172,6 +172,95 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+// Admin endpoint to update staff details
+export const updateUserByAdmin = async (req, res) => {
+  const { id } = req.params;
+  const { username, email, role, password } = req.body;
+
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Staff member not found" });
+    }
+
+    if (username) {
+      const trimmedUser = username.trim();
+      const existingUser = await User.findOne({ username: trimmedUser, _id: { $ne: id } });
+      if (existingUser) {
+        return res.status(400).json({ success: false, message: "Username already taken by another staff member" });
+      }
+      user.username = trimmedUser;
+    }
+
+    if (email) {
+      const trimmedEmail = email.trim().toLowerCase();
+      const existingEmail = await User.findOne({ email: trimmedEmail, _id: { $ne: id } });
+      if (existingEmail) {
+        return res.status(400).json({ success: false, message: "Email already taken by another staff member" });
+      }
+      user.email = trimmedEmail;
+    }
+
+    if (role) {
+      if (!["admin", "doctor", "receptionist"].includes(role)) {
+        return res.status(400).json({ success: false, message: "Invalid role specified" });
+      }
+      user.role = role;
+    }
+
+    if (password && password.trim().length >= 6) {
+      user.password = await bcrypt.hash(password.trim(), 10);
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `Staff member ${user.username} updated successfully`,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (err) {
+    console.error("Error in updateUserByAdmin:", err);
+    res.status(500).json({ success: false, message: err.message || "Server error" });
+  }
+};
+
+// Admin endpoint to delete a staff member
+export const deleteUserByAdmin = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Prevent admin from deleting their own account
+    if (String(req.userId) === String(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot delete your own active administrative account.",
+      });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Staff member not found" });
+    }
+
+    await User.findByIdAndDelete(id);
+
+    res.json({
+      success: true,
+      message: `Staff member ${user.username} (${user.email}) successfully deleted.`,
+    });
+  } catch (err) {
+    console.error("Error in deleteUserByAdmin:", err);
+    res.status(500).json({ success: false, message: err.message || "Server error" });
+  }
+};
+
 export const sendVerifyOtp = async (req, res) => {
   try {
     const userId = req.userId;

@@ -1,10 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
+import { VECTOR_DIMENSION } from "../Config/QdrantConfig.js";
 
 dotenv.config();
 
 const geminiApiKey = process.env.GEMINI_API_KEY;
-const embeddingModelName = process.env.GEMINI_EMBEDDING_MODEL || "text-embedding-004";
+const embeddingModelName = process.env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-2";
 
 let genAI = null;
 
@@ -41,13 +42,30 @@ export const embedText = async (text, maxRetries = 3) => {
     try {
       const ai = getGenAI();
       const model = ai.getGenerativeModel({ model: embeddingModelName });
-      const result = await model.embedContent(text);
 
-      if (!result?.embedding?.values) {
+      let result;
+      try {
+        // Explicitly request matching vector dimension (e.g. 768 for gemini-embedding-2)
+        result = await model.embedContent({
+          content: { parts: [{ text }] },
+          outputDimensionality: VECTOR_DIMENSION,
+        });
+      } catch (dimErr) {
+        // Fallback for models not supporting outputDimensionality
+        result = await model.embedContent(text);
+      }
+
+      let values = result?.embedding?.values;
+      if (!values || values.length === 0) {
         throw new Error("Empty embedding values returned from Gemini API");
       }
 
-      return result.embedding.values;
+      // Ensure vector length matches target dimension if returned longer
+      if (values.length > VECTOR_DIMENSION) {
+        values = values.slice(0, VECTOR_DIMENSION);
+      }
+
+      return values;
     } catch (error) {
       attempt++;
       lastError = error;

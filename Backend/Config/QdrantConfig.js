@@ -49,6 +49,23 @@ export const ensureCollectionExists = async () => {
     } else {
       console.log(`✅ Qdrant collection '${QDRANT_COLLECTION}' already exists.`);
     }
+
+    // Ensure payload indexes exist for strict-mode queries and deletions
+    try {
+      await qdrant.createPayloadIndex(QDRANT_COLLECTION, {
+        field_name: "documentId",
+        field_schema: "keyword",
+        wait: true,
+      });
+      await qdrant.createPayloadIndex(QDRANT_COLLECTION, {
+        field_name: "category",
+        field_schema: "keyword",
+        wait: true,
+      });
+    } catch (idxErr) {
+      // Index already created or collection managed
+    }
+
     return true;
   } catch (error) {
     console.error("❌ Failed to ensure Qdrant collection:", error.message);
